@@ -1,4 +1,4 @@
-from src.model import TimeSeriesBaseLLM
+from src.model import TimeSeriesBaseLLM,STLLMAttn
 from src.dataset import DatasetForTimeSeries
 
 
@@ -8,4 +8,5 @@ datasets = {
 
 models = {
     "time_series": TimeSeriesBaseLLM,
+    "st_llm_attn":STLLMAttn
 }

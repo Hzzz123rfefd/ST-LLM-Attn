@@ -49,6 +49,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_config_path", type=str, default = "config/time_series.yml")
+    parser.add_argument("--model_config_path", type=str, default = "config/st_llm_attn.yml")
     args = parser.parse_args()
     main(args)

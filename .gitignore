@@ -1,3 +1,4 @@
 *.npy
 *.vsdx
 *.pyc
+saved_model

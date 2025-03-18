@@ -6,7 +6,7 @@ from torch import optim
 from abc import abstractmethod
 from tqdm import tqdm
 import torch.nn.functional as F
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoConfig, PreTrainedModel
 from peft import get_peft_model, LoraConfig, TaskType, PeftModel
 import torch
 
@@ -208,27 +208,27 @@ class ModelLLMWithLoraBase(ModelBase):
         # load llm model
         self.base_model =  AutoModelForCausalLM.from_pretrained(
             self.model_name_or_path,
-            torch_dtype=torch.float16
+            torch_dtype=torch.float32
         )
-        
+        self.config = AutoConfig.from_pretrained(model_name_or_path)
+        self.hidden_dim = self.config.hidden_size
         self.backbone = self.load_model_with_lora(self.lora_path)
         self.backbone.print_trainable_parameters()
-        
         
     def load_model_with_lora(self, lora_path):
         if lora_path == None:
             self.lora_config = LoraConfig(
-                task_type=TaskType.CAUSAL_LM, 
+                task_type = TaskType.CAUSAL_LM, 
                 inference_mode = False,
                 r = 8,
-                lora_alpha = 16,                                        # LoRA 的缩放因子
-                lora_dropout=0.05 
+                lora_alpha = 16,                                                                                  # LoRA 的缩放因子
+                lora_dropout = 0.05 
             )
             return get_peft_model(self.base_model, self.lora_config)
 
         return PeftModel.from_pretrained(
             model = self.base_model, 
-            model_id = self.lora_config,
+            model_id = lora_path,
             is_trainable = True
         )
     
@@ -237,4 +237,5 @@ class ModelLLMWithLoraBase(ModelBase):
 
     def save_pretrained(self, save_model_dir):
         self.backbone.save_pretrained(save_model_dir)
-            
+        
+ 
