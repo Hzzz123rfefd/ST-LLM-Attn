@@ -1,6 +1,7 @@
 import numpy as np
 a = np.load("dataset/nanning/数据/2019元旦/inflow_data_15min.npy")
 
+print("shape:", a.shape)
 # 计算最小值和最大值
 a_min = np.min(a)
 a_max = np.max(a)

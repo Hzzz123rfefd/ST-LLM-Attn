@@ -1,9 +1,9 @@
 import torch.nn as nn
 
 
-class TimeProcess(nn.Module):
+class STAtt(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_heads=8, num_layers=6):
-        super(TimeProcess, self).__init__()
+        super(STAtt, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         

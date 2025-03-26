@@ -25,10 +25,14 @@ class DatasetForTimeSeries:
 
     def __getitem__(self, idx):
         output = {}
-        npy_data_path = self.dataset[idx]["npy_data_path"]
-        data = torch.from_numpy(np.load(npy_data_path)).float()
-        output["seq"] = data[0: -1,:]
-        output["predict"] = data[-1,:]
+        inflow_path = self.dataset[idx]["inflow_path"]
+        outflow_path = self.dataset[idx]["outflow_path"]
+        inflow = torch.from_numpy(np.load(inflow_path)).float()
+        outflow = torch.from_numpy(np.load(outflow_path)).float()
+        output["inflow"] = inflow[0: -1,:]
+        output["inflow_label"] = inflow[-1,:]
+        output["outflow"] = outflow[0: -1,:]
+        output["outflow_label"] = outflow[-1,:]
         return output
     
     def collate_fn(self,batch):

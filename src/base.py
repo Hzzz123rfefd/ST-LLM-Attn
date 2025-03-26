@@ -233,7 +233,8 @@ class ModelLLMWithLoraBase(ModelBase):
         )
     
     def load_pretrained(self, save_model_dir):
-        pass
+        if save_model_dir != None:
+            self.load_model_with_lora(save_model_dir)
 
     def save_pretrained(self, save_model_dir):
         self.backbone.save_pretrained(save_model_dir)
