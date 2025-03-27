@@ -52,8 +52,6 @@ class STLLMAttn(ModelRegression):
             output = {
                 "inflow_predict": inflow_predict,
                 "outflow_predict":outflow_predict,
-                "inflow_label": input["inflow_label"].to(self.device),
-                "outflow_label": input["outflow_label"].to(self.device)
             }
         return output  
 
@@ -74,20 +72,25 @@ class STLLMAttn(ModelRegression):
         }
         torch.save(filtered_state_dict, save_model_dir + "/model.pth")
         
-    def inference(self, t):
+    def inference(self, inflow, outflow):
         """
             t: shepe (t, dim)
         """
-        t = np.array(t, dtype=np.float32)  
-        seq = torch.from_numpy(t).unsqueeze(0).to(self.device)
+        inflow = np.array(inflow, dtype=np.float32)  
+        inflow = torch.from_numpy(inflow).unsqueeze(0).to(self.device)
+        outflow = np.array(outflow, dtype=np.float32)  
+        outflow = torch.from_numpy(outflow).unsqueeze(0).to(self.device)
         input = {
-            "seq" :  seq
+            "inflow" :  inflow,
+            "outflow" : outflow
         }
         with torch.no_grad():
             output = self.forward(input, is_train = False)
-            pred = output["predict"]
-        pred = pred.squeeze(0).cpu().numpy()
-        return pred
+            inflow_predict = output["inflow_predict"]
+            outflow_predict = output["outflow_predict"]
+        inflow_predict = inflow_predict.squeeze(0).cpu().numpy()
+        outflow_predict = outflow_predict.squeeze(0).cpu().numpy()
+        return inflow_predict, outflow_predict
 
     def compute_loss(self, input):
         inflow_loss = F.mse_loss(input["inflow_predict"], input["inflow_label"])
@@ -101,13 +104,34 @@ class STLLMAttn(ModelRegression):
         return output
 
     def eval_epoch(self, epoch, val_dataloader, log_path = None):
-        rmse = AverageMeter()
-        mae = AverageMeter()
-        wmape =  AverageMeter()
+        inflow_max_value = 5770
+        inflow_min_value = 0
+        outflow_max_value = 5770
+        outflow_min_value = 0
+        rmse_in = AverageMeter()
+        mae_in = AverageMeter()
+        wmape_in =  AverageMeter()
+        rmse_out = AverageMeter()
+        mae_out = AverageMeter()
+        wmape_out =  AverageMeter()
         with torch.no_grad():
             for batch_id,inputs in enumerate(val_dataloader):
-                output = self.forward(inputs, is_train = False)
-                
+                output = self.forward(inputs, is_train = True)
+                inflow_predict = output["inflow_predict"] * (inflow_max_value - inflow_min_value) + inflow_min_value
+                inflow_label = output["inflow_label"] * (inflow_max_value - inflow_min_value) + inflow_min_value
+                outflow_predict = output["outflow_predict"] * (outflow_max_value - outflow_min_value) + outflow_min_value
+                outflow_label = output["outflow_label"] * (outflow_max_value - outflow_min_value) + outflow_min_value
+                rmse_in.update(rmse(inflow_predict, inflow_label).cpu().item())
+                mae_in.update(mae(inflow_predict, inflow_label).cpu().item())
+                wmape_in.update(wmape(inflow_predict, inflow_label).cpu().item())
+                rmse_out.update(rmse(outflow_predict, outflow_label).cpu().item())
+                mae_out.update(mae(outflow_predict, outflow_label).cpu().item())
+                wmape_out.update(wmape(outflow_predict, outflow_label).cpu().item())
+        str =  f"inflow RMSE = {rmse_in.avg}, MAE = {mae_in.avg}, WMAPE = {wmape_in.avg}, outflow RMSE = {rmse_out.avg}, MAE = {mae_out.avg}, WMAPE = {wmape_out.avg}"
+        print(str)
+        if log_path != None:
+            with open(log_path, "a") as file:
+                file.write(str + "\n")
                 
         
         

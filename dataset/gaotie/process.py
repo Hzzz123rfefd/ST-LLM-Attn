@@ -11,14 +11,15 @@ def normalization(data):
     min = np.min(data)
     max = np.max(data)
     norm = (data - min) / (max - min)
+    print(f"max = {max}, min = {min}")
     return norm
 
 def transform_and_save(inflow_path, outflow_path, output_dir, timestamp, train_output_dir, start_time, time_interval):
     inflow = pd.read_csv(inflow_path, header=None).to_numpy()
     outflow = pd.read_csv(outflow_path, header=None).to_numpy()
     
-    np.save("dataset\gaotie\8_matrix_o.npy", inflow)
-    np.save("dataset\gaotie\8_matrix_d.npy", outflow)
+    np.save("dataset\gaotie\inflow.npy", inflow)
+    np.save("dataset\gaotie\outflow.npy", outflow)
     
     inflow = normalization(inflow)
     outflow = normalization(outflow)
@@ -36,7 +37,7 @@ def transform_and_save(inflow_path, outflow_path, output_dir, timestamp, train_o
     
     with open(jsonl_path, "w") as jsonl_file:
         for i in range(new_t):
-            sub_inflow = inflow[:, i:i + timestamp + 1]  
+            sub_inflow = inflow[:, i: i + timestamp + 1]  
             sub_outflow = outflow[:, i:i + timestamp + 1]  
             output_path1 = os.path.join(output_dir, f"inflow_{i}.npy")
             output_path2 = os.path.join(output_dir, f"outflow_{i}.npy")

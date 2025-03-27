@@ -4,6 +4,15 @@ import torch.nn as nn
 from torch.utils.data.dataloader import default_collate
 import yaml
 
+def rmse(pred, label):
+    return torch.sqrt(torch.mean((pred - label) ** 2))
+
+def mae(pred, label):
+    return torch.mean(torch.abs(pred - label))
+
+def wmape(pred, label):
+    return torch.sum(torch.abs(pred - label)) / torch.sum(torch.abs(label))
+
 def load_config(config_path):
     with open(config_path, 'r') as file:
         config = yaml.safe_load(file)
