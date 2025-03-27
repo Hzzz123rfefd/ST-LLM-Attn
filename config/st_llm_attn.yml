@@ -11,7 +11,7 @@ model:
 
 traininng:
   batch_size: 16              
-  epochs: 400        
+  epochs: 500     
   learning_rate: 0.0001   
   optimizer: Adam              
   weight_decay: 0
@@ -29,5 +29,5 @@ dataset:
 
 
 logging:
-  eval_interval: 10      
+  eval_interval: 1000      
   save_dir: "./saved_model/st_llm_attn"   

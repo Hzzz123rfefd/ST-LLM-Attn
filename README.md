@@ -1,56 +1,74 @@
 # ST-LLM-Attn
-
-## 安装
-安装相关依赖
+## 📦 安装
 ```bash
-conda create -n ST-LLM-Attn python=3.10
+# 创建虚拟环境（需提前安装 Anaconda/Miniconda）
+conda create -n ST-LLM-Attn python=3.10 -y
 conda activate ST-LLM-Attn
+# 克隆仓库并安装依赖
 git clone https://github.com/Hzzz123rfefd/ST-LLM-Attn.git
-pip install -r requirement.txt
+cd ST-LLM-Attn
+pip install -r requirements.txt  # 注意文件名应为复数形式
 ```
-
-## 使用方式
-### 数据集
-首先你需要准备时序数据集，由于保密原因，此处数据集用dataset1表示，你需要放入dataset文件夹下，因此你的目录结构为
-- eticn/
-  - datasets/
-    - your_datasets/
-      - file1
-      - file2
-      - process.py
-
-你需要自己根据你的数据格式完成process.py，该函数的作用应该包括：
-* 保存进站流为npy文件，命名inflow.npy，shape = （n，t），其中n为站点，t为时间序列
-* 保存出站流为npy文件，命名outflow.npy，shape = （n，t），其中n为站点，t为时间序列
-* 保存预测npy文件，放入文件夹dataset/your_datasets/npy_data
-该文件夹中保存inflow_{index}.npy，和outflow_{index}.npy维度为（n，t‘ + 1），其中n为站点，t‘为需要多少个时间步去预测下一个时间步
-* 保存预测格式jsonl，放入文件夹your_datasets_trainning
-该文件夹中保存train.jsonl、test.jsonl、val.jsonl， 每个jsonl格式如下：
-```jsonl
-{"inflow_path": "dataset/your_datasets/npy_data\\inflow_0.npy", "outflow_path": "dataset/your_datasets/npy_data\\outflow_0.npy"}
-{"inflow_path": "dataset/your_datasets/npy_data\\inflow_1.npy", "outflow_path": "dataset/your_datasets/npy_data\\outflow_1.npy"}
-.....
+## 🚀 使用指南
+### 数据集准备
+#### 目录结构
+```text
+ST-LLM-Attn/
+├── datasets/
+│   └── your_dataset/       # 自定义数据集名称
+│       ├── file1           # 原始数据文件
+│       ├── file2
+│       └── process.py      # 数据预处理脚本
 ```
+#### 预处理脚本要求
+在 `process.py` 中需完成以下操作：
 
-### 模型训练
-你可以在`config\st_llm_attn.yml`中修改训练、模型相关配置参数，然后运行以下脚本开始模型训练
+1. 流量数据保存
+  - 生成 inflow.npy 和 outflow.npy
+  - 维度：(n, t)，其中 n=站点数，t=时间序列长度
+
+2. 训练数据切片
+
+  - 输出文件至 datasets/your_dataset/npy_data/
+  - 命名格式：inflow_{index}.npy 和 outflow_{index}.npy
+  - 维度：(n, t'+1)，其中 t'=输入时间步数
+
+3. 生成 JSONL 索引
+  - 输出文件至 datasets/your_dataset_training/
+
+```json
+{"inflow_path": "datasets/your_dataset/npy_data/inflow_0.npy", "outflow_path": "datasets/your_dataset/npy_data/outflow_0.npy"}
+......
+```
+### ⚙️ 模型训练
+修改配置文件 `config/st_llm_attn.yml` 后运行：
 ```bash
 python train.py --model_config_path config/st_llm_attn.yml
 ```
-
-### 模型评估
+### 📊 模型评估
 你可以运行以下脚本开始评估模型，评价指标包括RMSE、MAE 、WMAPE
 ```bash
-python example\eval.py --model_config_path config/st_llm_attn.yml --data_path gaotie_trainning/test.jsonl --model_path saved_model/st_llm_attn
+# 评估前需确保模型已训练保存至 saved_model/
+python example/eval.py \ 
+  --model_config_path config/st_llm_attn.yml \
+  --data_path datasets/your_dataset_training/test.jsonl \
+  --model_path saved_model/st_llm_attn
 ```
 
-### 模型推理
+### 🔮 模型推理
 你可以运行以下脚本开始进行模型推理，这依赖于你之前生成的inflow.npy和outflow.npy
 ```bash
-python example\inference.py --model_config_path config/st_llm_attn.yml --inflow_path dataset/gaotie/inflow.npy --outflow_path dataset/gaotie/outflow.npy --model_path saved_model/st_llm_attn --step 7 --save_dir result/
+# 需提前准备好 inflow.npy 和 outflow.npy
+python example/inference.py \
+  --model_config_path config/st_llm_attn.yml \
+  --inflow_path datasets/your_dataset/inflow.npy \
+  --outflow_path datasets/your_dataset/outflow.npy \
+  --model_path saved_model/st_llm_attn \
+  --step 7 \                  # 预测步长
+  --save_dir results/         # 输出目录
 ```
-
-### 结果可视化
+### 📈 结果可视化
 首先你需要进行模型推理，然后运行以下脚本即可进行结果可视化
-python example\plot.py --save_dir result/
+```bash
+python example/plot.py --save_dir results/
 ```
