@@ -1,0 +1,33 @@
+# config.yml
+
+model_type:
+  time_series
+# mdoel args
+model:
+  input_dim: 41
+  hidden_dim: 128
+  llm_model: gpt2
+  device: cuda
+
+traininng:
+  batch_size: 16              
+  epochs: 1000          
+  learning_rate: 0.0001   
+  optimizer: Adam              
+  weight_decay: 0
+  clip_max_norm: 0.5
+  factor: 0.3
+  patience: 15         
+  device: cuda
+
+dataset_type:
+  time_series
+dataset:
+  train_data_path: naning_trainning/train.jsonl
+  test_data_path: naning_trainning/train.jsonl
+  valid_data_path: naning_trainning/train.jsonl
+
+
+logging:
+  eval_interval: 10      
+  save_dir: "./saved_model/time_series"   

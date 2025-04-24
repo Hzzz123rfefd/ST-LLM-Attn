@@ -1,0 +1,32 @@
+# config.yml
+
+model_type:
+  lstm
+# mdoel args
+model:
+  station_num: 24
+  hidden_dim: 128
+  device: cuda
+
+traininng:
+  batch_size: 16              
+  epochs: 1000     
+  learning_rate: 0.0001   
+  optimizer: Adam              
+  weight_decay: 0
+  clip_max_norm: 0.5
+  factor: 0.3
+  patience: 15         
+  device: cuda
+
+dataset_type:
+  time_series
+dataset:
+  train_data_path: gaotie_trainning/train.jsonl
+  test_data_path: gaotie_trainning/test.jsonl
+  valid_data_path: gaotie_trainning/val.jsonl
+
+
+logging:
+  eval_interval: 1000      
+  save_dir: "./saved_model/lstm"   

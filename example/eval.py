@@ -36,7 +36,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_config_path", type=str, default = "config/st_llm_attn.yml")
-    parser.add_argument("--data_path", type=str, default = "gaotie_trainning/test.jsonl")
-    parser.add_argument("--model_path", type=str, default = "saved_model/st_llm_attn")
+    parser.add_argument("--data_path", type=str, default = "gaotie_trainning/16/train.jsonl")
+    parser.add_argument("--model_path", type=str, default = "saved_model/st_llm_attn_16")
     args = parser.parse_args()
     main(args)

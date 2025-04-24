@@ -49,10 +49,7 @@ python train.py --model_config_path config/st_llm_attn.yml
 你可以运行以下脚本开始评估模型，评价指标包括RMSE、MAE 、WMAPE
 ```bash
 # 评估前需确保模型已训练保存至 saved_model/
-python example/eval.py \ 
-  --model_config_path config/st_llm_attn.yml \
-  --data_path datasets/your_dataset_training/test.jsonl \
-  --model_path saved_model/st_llm_attn
+python example/eval.py  --model_config_path config/st_llm_attn.yml --data_path gaotie_trainning/test.jsonl --model_path saved_model/st_llm_attn
 ```
 
 ### 🔮 模型推理

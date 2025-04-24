@@ -78,7 +78,9 @@ class ModelBase(nn.Module):
 
             try:
                 for epoch in range(last_epoch, total_epoch):
-                    print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
+                    log_str = f"Learning rate: {optimizer.param_groups[0]['lr']}"
+                    with open(log_path, "a") as file:
+                        file.write(log_str+"\n")
                     train_loss = self.train_one_epoch(epoch,train_dataloader, optimizer,clip_max_norm,log_path)
                     test_loss = self.test_epoch(epoch,test_dataloader,log_path)
                     loss = train_loss + test_loss
@@ -99,6 +101,9 @@ class ModelBase(nn.Module):
                     
                     if is_best:
                         self.save_pretrained(save_model_dir)
+                    
+                    # if(optimizer.param_groups[0]['lr'] == 9e-06):
+                    #     break
 
             # interrupt trianning
             except KeyboardInterrupt:
@@ -238,5 +243,96 @@ class ModelLLMWithLoraBase(ModelBase):
 
     def save_pretrained(self, save_model_dir):
         self.backbone.save_pretrained(save_model_dir)
+
+class ModelTimeSeriesBase(ModelRegression):
+    def __init__(self, station_num, hidden_dim, device="cuda"):
+        super().__init__(device)
+        self.station_num = station_num
+        self.hidden_dim = hidden_dim
+
+    def inference(self, inflow, outflow):
+        """
+            t: shepe (t, dim)
+        """
+        inflow = np.array(inflow, dtype=np.float32)  
+        inflow = torch.from_numpy(inflow).unsqueeze(0).to(self.device)
+        outflow = np.array(outflow, dtype=np.float32)  
+        outflow = torch.from_numpy(outflow).unsqueeze(0).to(self.device)
+        input = {
+            "inflow" :  inflow,
+            "outflow" : outflow
+        }
+        with torch.no_grad():
+            output = self.forward(input, is_train = False)
+            inflow_predict = output["inflow_predict"]
+            outflow_predict = output["outflow_predict"]
+        inflow_predict = inflow_predict.squeeze(0).cpu().numpy()
+        outflow_predict = outflow_predict.squeeze(0).cpu().numpy()
+        return inflow_predict, outflow_predict
+        
+    def compute_loss(self, input):
+        inflow_loss = F.mse_loss(input["inflow_predict"], input["inflow_label"])
+        outflow_loss = F.mse_loss(input["outflow_predict"], input["outflow_label"])
+        total_loss = inflow_loss + outflow_loss
+        output = {
+            "inflow_loss":  inflow_loss,
+            "outflow_loss": outflow_loss,
+            "total_loss":total_loss
+        }
+        return output
+
+    def eval_epoch(self, epoch, val_dataloader, log_path = None):
+        inflow_max_value = 5770      # 5770  3246.0
+        inflow_min_value = 0
+        outflow_max_value = 5945    # 5945  4365
+        outflow_min_value = 0
+        rmse_in = AverageMeter()
+        mae_in = AverageMeter()
+        wmape_in =  AverageMeter()
+        rmse_out = AverageMeter()
+        mae_out = AverageMeter()
+        wmape_out =  AverageMeter()
+        inflow_predicts = []
+        inflow_labels = []
+        outflow_predicts = []
+        outflow_labels = []
+        with torch.no_grad():
+            for batch_id,inputs in enumerate(val_dataloader):
+                output = self.forward(inputs, is_train = True)
+                inflow_predict = output["inflow_predict"] * (inflow_max_value - inflow_min_value) + inflow_min_value
+                inflow_label = output["inflow_label"] * (inflow_max_value - inflow_min_value) + inflow_min_value
+                outflow_predict = output["outflow_predict"] * (outflow_max_value - outflow_min_value) + outflow_min_value
+                outflow_label = output["outflow_label"] * (outflow_max_value - outflow_min_value) + outflow_min_value
+                inflow_predicts.append(inflow_predict.cpu())
+                inflow_labels.append(inflow_label.cpu())
+                outflow_predicts.append(outflow_predict.cpu())
+                outflow_labels.append(outflow_label.cpu())
+                # rmse_in.update(rmse(inflow_predict, inflow_label).cpu().item())
+                # mae_in.update(mae(inflow_predict, inflow_label).cpu().item())
+                # wmape_in.update(wmape(inflow_predict, inflow_label).cpu().item())
+                # rmse_out.update(rmse(outflow_predict, outflow_label).cpu().item())
+                # mae_out.update(mae(outflow_predict, outflow_label).cpu().item())
+                # wmape_out.update(wmape(outflow_predict, outflow_label).cpu().item())
+        inflow_predicts = torch.cat(inflow_predicts, dim=0)
+        inflow_labels = torch.cat(inflow_labels, dim=0)
+        outflow_predicts = torch.cat(outflow_predicts, dim=0)
+        outflow_labels = torch.cat(outflow_labels, dim=0)
+        str =  f"inflow RMSE = {rmse(inflow_predicts, inflow_labels).cpu().item()}, MAE = {mae(inflow_predicts, inflow_labels).cpu().item()}, WMAPE = {wmape(inflow_predicts, inflow_labels).cpu().item()}, outflow RMSE = {rmse(outflow_predicts, outflow_labels).cpu().item()}, MAE = {mae(outflow_predicts, outflow_labels).cpu().item()}, WMAPE = {wmape(outflow_predicts, outflow_labels).cpu().item()}"
+        print(str)
+        if log_path != None:
+            with open(log_path, "a") as file:
+                file.write(str + "\n")
+        inflow_predicts = inflow_predicts.numpy()
+        inflow_labels = inflow_labels.numpy()
+        outflow_predicts = outflow_predicts.numpy()
+        outflow_labels = outflow_labels.numpy()
+        return inflow_predicts, inflow_labels, outflow_predicts, outflow_labels
+                
+    def load_pretrained(self, save_model_dir):
+        self.load_state_dict(torch.load(save_model_dir + "/model.pth"), strict=False)
+        
+    def save_pretrained(self,  save_model_dir):
+        torch.save(self.state_dict(), save_model_dir + "/model.pth")     
+
         
  

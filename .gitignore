@@ -7,4 +7,6 @@ result
 result-nanning
 gaotie_trainning
 naning_trainning
-docs
+docs/
+*.csv
+eval.sh

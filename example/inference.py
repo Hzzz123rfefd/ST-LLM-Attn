@@ -38,11 +38,11 @@ def main(args):
     outflow_preds = []
     """ inference """
     for i in range (time_step - args.step):
-        y1 = inflow[i + args.step , :]
+        y1 = inflow[i + args.step, :]
         inflow_trues.append(y1)
         x1 = inflow_norm[i: i + args.step, :]
 
-        y2 = outflow[i + args.step , :]
+        y2 = outflow[i + args.step, :]
         outflow_trues.append(y2)
         x2 = outflow_norm[i: i + args.step, :]
         

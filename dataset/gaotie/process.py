@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import os
 import json
@@ -27,20 +28,20 @@ def transform_and_save(inflow_path, outflow_path, output_dir, timestamp, train_o
     n, t = inflow.shape
     new_t = t - timestamp
     
-    os.makedirs(output_dir, exist_ok=True)
-    os.makedirs(train_output_dir, exist_ok=True)
+    os.makedirs(output_dir + str(timestamp), exist_ok=True)
+    os.makedirs(train_output_dir + str(timestamp), exist_ok=True)
     
     start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M")
     time_interval = timedelta(minutes=time_interval)
     
-    jsonl_path = os.path.join(train_output_dir, "train.jsonl")
+    jsonl_path = os.path.join(train_output_dir, str(timestamp), "train.jsonl")
     
     with open(jsonl_path, "w") as jsonl_file:
         for i in range(new_t):
             sub_inflow = inflow[:, i: i + timestamp + 1]  
             sub_outflow = outflow[:, i:i + timestamp + 1]  
-            output_path1 = os.path.join(output_dir, f"inflow_{i}.npy")
-            output_path2 = os.path.join(output_dir, f"outflow_{i}.npy")
+            output_path1 = os.path.join(output_dir, str(timestamp), f"inflow_{i}.npy")
+            output_path2 = os.path.join(output_dir, str(timestamp), f"outflow_{i}.npy")
             
             sub_inflow = np.transpose(sub_inflow, (1, 0))
             sub_outflow = np.transpose(sub_outflow, (1, 0))
@@ -55,11 +56,16 @@ def transform_and_save(inflow_path, outflow_path, output_dir, timestamp, train_o
             jsonl_file.write(json.dumps(json_entry) + "\n")
             
 
-start_time = "2020-09-10 10:10"  
-interval_minutes = 60  
-timestamp = 7                                                                                                     # 用历史多少个时间步
-inflow_path = "dataset/gaotie/8_matrix_o.csv"                                                 # 进站流文件路径
-outflow_path = "dataset/gaotie/8_matrix_d.csv"                                               # 出站流文件路径
-output_directory = "dataset/gaotie/npy_data"  
-train_output_dir = "gaotie_trainning" 
-transform_and_save(inflow_path, outflow_path, output_directory, timestamp, train_output_dir, start_time, interval_minutes)
+if __name__ == "__main__":
+    start_time = "2020-09-10 10:10"  
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--interval_minutes", type = int, default = 60)
+    parser.add_argument("--timestamp", type = int, default = 8)
+    parser.add_argument("--inflow_path", type = str, default = "dataset/gaotie/8_matrix_o.csv")
+    parser.add_argument("--outflow_path", type = str, default = "dataset/gaotie/8_matrix_d.csv")
+    parser.add_argument("--output_dir", type = str, default = "dataset/gaotie/npy_data/")
+    parser.add_argument("--train_output_dir", type = str, default = "gaotie_trainning/")
+    args = parser.parse_args()                                                                                   
+    transform_and_save(args.inflow_path, args.outflow_path, args.output_dir, args.timestamp, args.train_output_dir, start_time, args.interval_minutes)
+    
+# python dataset\gaotie\process.py --interval_minutes 60 --timestamp 12 --inflow_path dataset/gaotie/8_matrix_o.csv --outflow_path dataset/gaotie/8_matrix_d.csv --output_dir dataset/gaotie/npy_data/ --train_output_dir gaotie_trainning/
